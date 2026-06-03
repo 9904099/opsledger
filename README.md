@@ -4,21 +4,75 @@
 
 OpsLedger is a lightweight cloud operations ledger for small platform and SRE teams. It tracks cloud accounts, assets, credentials, approvals, audit events, probes, cost snapshots, and controlled WebSSH access in a single Go service.
 
-## Features
+## Product Capabilities
 
-- Single Go binary with embedded web UI.
-- SQLite by default, with PostgreSQL and MySQL DSN support.
-- Cloud account and asset ledger for AWS, Cloudflare, PVE, Aliyun, Tencent Cloud, and manual assets.
-- AWS discovery for common resource types and Cost Explorer snapshots.
-- Cloudflare discovery for zones, DNS records, Workers, R2 buckets, WAF rulesets, and load balancers.
-- PVE discovery through read-only SSH commands.
-- Local login, role-based workspaces, approval flows, audit events, and credential encryption.
-- Optional WebSSH temporary access flow for EC2 assets.
-- Container and systemd binary deployment examples.
+- **Operations asset ledger**: manage platforms, cloud accounts, projects, environments, resource types, asset specs, ownership, status, criticality, tags, inspections, changes, and sync history in one workspace.
+- **Cloud discovery**: discover AWS assets and Cost Explorer snapshots, Cloudflare zones and DNS/edge resources, and PVE hosts/VMs through read-only SSH commands. Aliyun, Tencent Cloud, and manual assets are reserved in the platform model.
+- **Developer self-service**: developers see application entries, global tools, accessible assets, temporary credentials, and EC2 WebSSH request actions by environment.
+- **Approval and temporary access**: route credential and WebSSH requests through configurable approval flows; approved requests create time-limited grants rather than long-lived shared access.
+- **Credential governance**: store cloud account keys, tool passwords, API tokens, SSH keys, and generic secrets with encryption and masked UI display.
+- **Audit and security trail**: record login, denied access, approval, credential reveal/copy, WebSSH, sync, alert, and attachment activity with time, actor, object, result, source, and summary.
+- **Cost and chargeback foundation**: keep AWS account cost snapshots and provide a project chargeback view as a starting point for Cost Allocation Tag or CUR integration.
+- **Deployment options**: run as a single Go binary with embedded UI, use SQLite by default, or switch to PostgreSQL/MySQL; deploy with Docker Compose or systemd.
 
-## Screenshot
+## Role Workspaces
+
+| Role | Default workspace | Typical work |
+| --- | --- | --- |
+| Platform Admin | Operations workspace | Configure platforms, accounts, users, roles, permissions, approval flows, tags, sync jobs, and security settings. |
+| Ops Engineer | Operations workspace | Maintain assets, sync cloud accounts, review inspections and alerts, process approvals, and manage credentials. |
+| Developer | Developer workspace | Open app entries and tools, view scoped assets, request credentials, and request or use approved WebSSH access. |
+| Development Lead | Developer workspace | Work as a developer and approve team requests for development and test environments. |
+| Auditor | Audit workspace | Review time-ordered audit events, denied access, credential access, approval actions, WebSSH sessions, sync activity, and alert handling. |
+| Viewer | Read-only operations workspace | Review asset status, account posture, costs, inspections, and changes without configuration permissions. |
+
+## Feature Matrix
+
+| Area | What OpsLedger provides |
+| --- | --- |
+| Asset model | Platform -> account -> project/environment/resource type -> asset, with tags, specs, status, owner, and criticality. |
+| Cloud accounts | Credential storage, manual sync, scheduled sync, sync history, account-level detail cards, and cost snapshots. |
+| AWS | EC2, EBS, EIP, ELB, S3, RDS, VPC, subnet, security group discovery, tag import, stale marking, and Cost Explorer snapshots. |
+| Cloudflare | Zone, DNS record, Worker, R2, WAF ruleset, and load balancer discovery, plus domain expiry and DNS probe tracking. |
+| PVE | Read-only discovery for hosts, VMs, LXC, storage, networks, snapshots, backup jobs, clusters, and pools. |
+| Tools and apps | Global tools and environment-specific application entries, with optional credential governance. |
+| Approvals | Configurable approval flows for credentials and WebSSH, step-level approver roles, and temporary grants after approval. |
+| WebSSH | Browser SSH session for approved EC2 access, backed by short-lived authorization and audit records. |
+| Inspections and alerts | Automatic probe records, inspection records, alert records, attachments, handling status, and asset-level history. |
+| Security | HttpOnly sessions, CSRF protection, RBAC, data scoping, encrypted credentials, audit trail, and optional strict SSH host key checks. |
+| Deployment | First-run setup wizard, SQLite default, PostgreSQL/MySQL support, Docker Compose, and systemd install script. |
+
+## Screenshots
+
+### First Deployment
 
 ![OpsLedger first deployment setup](./docs/images/setup-en.png)
+
+### Operations Workspaces
+
+Admin and Ops roles use the cloud operations workspace for asset trees, account views, inspections, changes, approvals, and sync posture.
+
+![Admin operations workspace](./docs/images/workspace-admin-en.png)
+
+![Ops operations workspace](./docs/images/workspace-ops-en.png)
+
+Viewer has a read-only operations view for status review without configuration access.
+
+![Viewer read-only workspace](./docs/images/workspace-viewer-en.png)
+
+### Developer Workspaces
+
+Developer and Development Lead roles use the environment-first workspace for app entries, global tools, credential requests, and WebSSH access requests.
+
+![Developer workspace](./docs/images/workspace-developer-en.png)
+
+![Development lead workspace](./docs/images/workspace-lead-en.png)
+
+### Audit Workspace
+
+Auditor uses a dedicated audit page focused on security and operation events.
+
+![Audit workspace](./docs/images/workspace-auditor-en.png)
 
 ## Quick Start
 
