@@ -149,15 +149,15 @@ function renderSetupState() {
   }
   if (refs.loginSubtitle) {
     refs.loginSubtitle.textContent = setupRequired
-      ? "首次部署时先完成数据库检查和管理员账号初始化。"
-      : "使用本地账号登录后进入运维台账和开发者工作台。";
+      ? t("setup.subtitle")
+      : t("login.subtitle");
   }
   if (refs.setupDatabaseStatus) {
     const setup = state.setup || {};
     const driver = setup.driver ? ` / ${setup.driver}` : "";
     refs.setupDatabaseStatus.textContent = setup.database_ready
-      ? `数据库已初始化${driver}`
-      : "正在检查数据库初始化状态";
+      ? `${t("setup.databaseReady")}${driver}`
+      : t("setup.databaseChecking");
   }
 }
 

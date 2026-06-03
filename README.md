@@ -16,6 +16,10 @@ OpsLedger is a lightweight cloud operations ledger for small platform and SRE te
 - Optional WebSSH temporary access flow for EC2 assets.
 - Container and systemd binary deployment examples.
 
+## Screenshot
+
+![OpsLedger first deployment setup](./docs/images/setup-en.png)
+
 ## Quick Start
 
 Run with a local SQLite database:
