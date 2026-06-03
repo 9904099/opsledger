@@ -1,5 +1,7 @@
 # OpsLedger
 
+[中文文档](./README.zh-CN.md)
+
 OpsLedger is a lightweight cloud operations ledger for small platform and SRE teams. It tracks cloud accounts, assets, credentials, approvals, audit events, probes, cost snapshots, and controlled WebSSH access in a single Go service.
 
 ## Features
