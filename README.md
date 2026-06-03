@@ -97,7 +97,30 @@ The service listens on `http://localhost:18090/` and stores SQLite data in the `
 
 ## Binary Deployment
 
-On a Linux host with Go installed:
+Use a release package when you want to copy OpsLedger to a Linux or Windows server without installing Go:
+
+```bash
+./scripts/build-release.sh v0.1.0
+ls -lh releases/
+```
+
+Linux package:
+
+```bash
+tar -xzf releases/opsledger-v0.1.0-linux-amd64.tar.gz
+cd opsledger-v0.1.0-linux-amd64
+./start.sh
+```
+
+Windows package:
+
+```powershell
+Expand-Archive .\releases\opsledger-v0.1.0-windows-amd64.zip
+cd .\opsledger-v0.1.0-windows-amd64
+.\start.ps1
+```
+
+For a managed Linux service with systemd on a host with Go installed:
 
 ```bash
 sudo ./scripts/install-systemd.sh

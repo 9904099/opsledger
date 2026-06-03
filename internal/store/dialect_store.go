@@ -34,7 +34,7 @@ type dialectTx struct {
 func normalizeDatabaseDialect(driver string) (databaseDialect, string, error) {
 	switch strings.ToLower(strings.TrimSpace(driver)) {
 	case "", "sqlite", "sqlite3":
-		return dialectSQLite, "sqlite3", nil
+		return dialectSQLite, "sqlite", nil
 	case "postgres", "postgresql":
 		return dialectPostgres, "postgres", nil
 	case "mysql":

@@ -1,7 +1,6 @@
 # Runtime data and local state.
 /data/*
 !/data/.gitkeep
-/releases/
 /backups/
 
 # Secrets and local configuration.

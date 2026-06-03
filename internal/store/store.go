@@ -11,7 +11,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 
 	"github.com/9904099/opsledger/internal/model"
 )
@@ -136,8 +136,8 @@ func NewSQLiteStore(path string) (*DBStore, error) {
 		return nil, err
 	}
 
-	dsn := fmt.Sprintf("file:%s?_foreign_keys=on&_journal_mode=WAL", path)
-	db, err := sql.Open("sqlite3", dsn)
+	dsn := fmt.Sprintf("file:%s?_pragma=foreign_keys(1)&_pragma=journal_mode(WAL)", path)
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, err
 	}

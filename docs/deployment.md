@@ -42,6 +42,45 @@ Edit `/etc/opsledger/opsledger.env`, then restart:
 sudo systemctl restart opsledger
 ```
 
+## Portable Release Package
+
+Use this mode when the target Linux or Windows server should not install Go.
+The package contains the compiled executable, startup scripts, configuration example, docs, and an empty `data/` directory.
+
+Build packages on a build machine:
+
+```bash
+./scripts/build-release.sh v0.1.0
+ls -lh releases/
+```
+
+Generated files:
+
+```text
+releases/opsledger-v0.1.0-linux-amd64.tar.gz
+releases/opsledger-v0.1.0-windows-amd64.zip
+releases/opsledger-v0.1.0-checksums.txt
+```
+
+Run on Linux:
+
+```bash
+tar -xzf opsledger-v0.1.0-linux-amd64.tar.gz
+cd opsledger-v0.1.0-linux-amd64
+./start.sh
+```
+
+Run on Windows PowerShell:
+
+```powershell
+Expand-Archive .\opsledger-v0.1.0-windows-amd64.zip
+cd .\opsledger-v0.1.0-windows-amd64
+.\start.ps1
+```
+
+The default data path is `./data/opsledger.db` inside the extracted package.
+On a fresh database, open `http://127.0.0.1:18090/` and create the first platform administrator in the setup wizard.
+
 ## PostgreSQL
 
 Example:

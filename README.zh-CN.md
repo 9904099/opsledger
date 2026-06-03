@@ -107,7 +107,30 @@ SQLite 数据保存在 `opsledger-data` Docker volume 中。
 
 ## 二进制部署
 
-在已安装 Go 的 Linux 主机上执行：
+如果希望复制到 Linux 或 Windows 服务器后直接启动，不在目标机器安装 Go，可以先生成发布包：
+
+```bash
+./scripts/build-release.sh v0.1.0
+ls -lh releases/
+```
+
+Linux 包：
+
+```bash
+tar -xzf releases/opsledger-v0.1.0-linux-amd64.tar.gz
+cd opsledger-v0.1.0-linux-amd64
+./start.sh
+```
+
+Windows 包：
+
+```powershell
+Expand-Archive .\releases\opsledger-v0.1.0-windows-amd64.zip
+cd .\opsledger-v0.1.0-windows-amd64
+.\start.ps1
+```
+
+如果是在已安装 Go 的 Linux 主机上以 systemd 托管服务运行：
 
 ```bash
 sudo ./scripts/install-systemd.sh
