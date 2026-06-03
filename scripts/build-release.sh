@@ -147,10 +147,13 @@ mkdir -p "$OUT_DIR"
 build_one linux amd64 ""
 build_one windows amd64 ".exe"
 
-sha256sum \
-  "$OUT_DIR/opsledger-$VERSION-linux-amd64.tar.gz" \
-  "$OUT_DIR/opsledger-$VERSION-windows-amd64.zip" \
-  > "$OUT_DIR/opsledger-$VERSION-checksums.txt"
+(
+  cd "$OUT_DIR"
+  sha256sum \
+    "opsledger-$VERSION-linux-amd64.tar.gz" \
+    "opsledger-$VERSION-windows-amd64.zip" \
+    > "opsledger-$VERSION-checksums.txt"
+)
 
 echo "Release files:"
 ls -lh "$OUT_DIR"/opsledger-"$VERSION"-*

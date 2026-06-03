@@ -1,2 +1,2 @@
-33ca09e415ab73cbf2b5466d4dd1f606ca47461ef54002c8280c77be2928d4c7  /mnt/c/users/0ooip/documents/codex/opsledger/open-source/releases/opsledger-v0.1.0-linux-amd64.tar.gz
-c86ed916ece7e500427e57b57c3427a35f8319f1b9d8efc80b43181314367bb4  /mnt/c/users/0ooip/documents/codex/opsledger/open-source/releases/opsledger-v0.1.0-windows-amd64.zip
+afca8a561d9c016b4d26b999c0d3875624041bad2194d05c5621fabb7eed98a4  opsledger-v0.1.0-linux-amd64.tar.gz
+2dfd00067db8c0580def6a97aa1ce70894aa23a5ef78bea477e85e0b571ca037  opsledger-v0.1.0-windows-amd64.zip
