@@ -1,0 +1,44 @@
+# Runtime data and local state.
+/data/*
+!/data/.gitkeep
+/releases/
+/backups/
+
+# Secrets and local configuration.
+*.env
+*.env.*
+!deploy/*.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.csr
+*.kubeconfig
+id_rsa*
+known_hosts*
+
+# Databases, backups, logs, and generated files.
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.bak
+*.backup
+*.dump
+*.log
+*.pid
+*.tmp
+
+# Build and test artifacts.
+/bin/
+/dist/
+/coverage/
+coverage.out
+*.test
+
+# Editor and OS noise.
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

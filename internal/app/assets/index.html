@@ -1,0 +1,981 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>云平台运维台账</title>
+  <link rel="stylesheet" href="/static/app.css?v=20260602-0.2.4">
+</head>
+<body>
+  <div class="app-shell">
+    <main id="loginPage" class="login-page hidden">
+      <section class="login-panel">
+        <div>
+          <h1 data-i18n="app.title">云平台运维台账</h1>
+          <p id="loginSubtitle" class="muted" data-i18n="login.subtitle">使用本地账号登录后进入运维台账和开发者工作台。</p>
+        </div>
+        <form id="loginForm" class="login-form">
+          <label><span data-i18n="login.username">用户名</span><input id="loginUsername" autocomplete="username" required></label>
+          <label><span data-i18n="login.password">密码</span><input id="loginPassword" type="password" autocomplete="current-password" required></label>
+          <button type="submit" data-i18n="login.submit">登录</button>
+          <p class="muted" data-i18n="login.seedHint">开发种子账号需显式启用并设置本地密码；公开部署请接入正式身份源。</p>
+        </form>
+        <form id="setupForm" class="login-form setup-form hidden">
+          <div class="setup-status">
+            <strong data-i18n="setup.title">首次部署初始化</strong>
+            <span id="setupDatabaseStatus" class="muted"></span>
+          </div>
+          <label><span data-i18n="setup.username">管理员账号</span><input id="setupUsername" autocomplete="username" value="admin" required></label>
+          <label><span data-i18n="setup.displayName">显示名称</span><input id="setupDisplayName" value="Platform Admin" required></label>
+          <label><span data-i18n="setup.email">邮箱</span><input id="setupEmail" type="email" autocomplete="email" placeholder="admin@example.com"></label>
+          <label><span data-i18n="setup.password">管理员密码</span><input id="setupPassword" type="password" autocomplete="new-password" minlength="12" required></label>
+          <label><span data-i18n="setup.confirmPassword">确认密码</span><input id="setupConfirmPassword" type="password" autocomplete="new-password" minlength="12" required></label>
+          <button type="submit" data-i18n="setup.submit">完成初始化</button>
+          <p class="muted" data-i18n="setup.hint">数据库表已自动初始化。这里会创建第一个平台管理员账号，不会生成默认弱口令。</p>
+        </form>
+      </section>
+    </main>
+
+    <header id="topbar" class="topbar">
+      <div class="brand-block">
+        <h1 data-i18n="app.title">云平台运维台账</h1>
+        <p data-i18n="app.subtitle">按云平台、账号和资源类型管理运维现场。</p>
+      </div>
+      <div class="topbar-actions">
+        <span id="currentUserBadge" class="current-user-badge muted"></span>
+        <button id="languageToggleButton" type="button" class="icon-button" title="Switch language">EN</button>
+        <button id="openDeveloperPageButton" type="button" data-i18n="nav.developer">开发者视角</button>
+        <button id="openAuditPageButton" type="button" data-i18n="nav.audit">审计</button>
+        <button id="reloadButton" type="button" data-i18n="nav.refresh">刷新</button>
+        <button id="openConfigPageButton" type="button" class="icon-button" title="打开配置页" data-i18n-title="nav.configTitle">⚙</button>
+        <button id="logoutButton" type="button" data-i18n="nav.logout">退出</button>
+        <span id="lastUpdated" class="muted"></span>
+      </div>
+    </header>
+
+    <div id="flashMessage" class="flash hidden"></div>
+
+    <main id="mainWorkbench" class="main-workbench">
+      <section class="workspace-panel">
+        <div class="workspace-toolbar">
+          <div>
+            <h2 data-i18n="workbench.summaryTitle">资产总览</h2>
+            <p class="muted" data-i18n="workbench.treePath">项目 -> 云平台 -> 账号 -> Zone / 类型 -> 资产</p>
+          </div>
+          <input id="searchInput" class="search" type="search" placeholder="搜索平台 / 云账号 / 资源 / 负责人 / 标签" data-i18n-placeholder="workbench.searchPlaceholder">
+          <div class="asset-filters">
+            <select id="treeStatusFilter">
+              <option value="">全部状态</option>
+              <option value="active">active</option>
+              <option value="maintenance">maintenance</option>
+              <option value="offline">offline</option>
+            </select>
+            <select id="treeProjectFilter">
+              <option value="">全部项目</option>
+            </select>
+            <select id="treeCloudAccountFilter">
+              <option value="">全部云账号</option>
+            </select>
+            <select id="treeResourceTypeFilter">
+              <option value="">全部资源类型</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="summary-strip">
+          <div id="summaryCards" class="summary-grid"></div>
+          <button id="workbenchApprovalInboxButton" type="button" class="approval-inbox hidden"></button>
+        </div>
+
+        <div class="asset-browser">
+          <div class="asset-tree-wrap">
+          <div class="asset-tree-header">
+              <div>
+                <span>资产树</span>
+                <small class="muted">按账号：云平台 -> 账号 -> 项目 -> 类型；按项目：项目 -> 云平台 -> 账号 -> 类型</small>
+              </div>
+              <div class="tree-mode-toggle" role="group" aria-label="资产树分类方式">
+                <button id="treeModeAccountButton" type="button">按账号</button>
+                <button id="treeModeProjectButton" type="button">按项目</button>
+              </div>
+            </div>
+            <div id="assetTree" class="asset-tree"></div>
+          </div>
+
+          <div class="asset-detail-wrap">
+            <div class="asset-tree-header">
+              <span>资产详情</span>
+              <small class="muted">查看规格、同步、巡检与变更概况</small>
+            </div>
+            <div id="assetDetail" class="asset-detail"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <main id="developerPage" class="developer-page hidden">
+      <section class="developer-shell">
+        <div class="developer-hero">
+          <div>
+            <h2>开发者工作台</h2>
+            <p class="muted">按环境查看工具入口、账号密码、临时凭证和 EC2 WebSSH。</p>
+          </div>
+          <div id="developerEnvTabs" class="developer-env-tabs"></div>
+          <div class="developer-hero-actions">
+            <button id="openApprovalModalButton" type="button" class="primary">提交申请</button>
+            <button id="closeDeveloperPageButton" type="button">返回运维台账</button>
+          </div>
+        </div>
+        <div id="developerOverview" class="developer-overview"></div>
+        <div class="developer-grid">
+          <div class="developer-main">
+          <section class="panel compact developer-section developer-app-section">
+            <div class="section-head">
+              <div>
+                <h2>应用入口</h2>
+                <p class="muted">当前环境的业务应用入口，默认展开。</p>
+              </div>
+            </div>
+            <div id="developerApps" class="developer-tool-grid"></div>
+          </section>
+          <section class="panel compact developer-section developer-tool-section">
+            <div class="section-head">
+              <div>
+                <h2>工具入口</h2>
+                <p class="muted">全局运维工具入口，默认展开。</p>
+              </div>
+            </div>
+            <div id="developerTools" class="developer-tool-grid"></div>
+          </section>
+          </div>
+          <aside class="panel compact developer-section developer-assets-panel">
+            <div class="section-head">
+              <div>
+                <h2>资产列表</h2>
+                <p class="muted">WebSSH 目标为 AWS EC2，敏感环境进入审批。</p>
+              </div>
+            </div>
+            <div id="developerAssets" class="asset-related-list"></div>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <main id="auditPage" class="audit-page hidden">
+      <section class="audit-workbench">
+        <div class="audit-hero">
+          <div>
+            <h2>审计工作台</h2>
+            <p class="muted">按操作时间追踪登录、权限、审批、凭证、WebSSH、同步和告警处理留痕。</p>
+          </div>
+          <span class="audit-retention muted">最近 50 条随首页加载，接口最多返回 100 条</span>
+        </div>
+        <div class="audit-layout">
+          <section class="panel compact audit-section">
+            <div class="section-head">
+              <div>
+                <h2>审计日志</h2>
+                <p class="muted">每条记录包含操作时间、操作人、动作、对象、结果、来源和摘要。</p>
+              </div>
+            </div>
+            <div class="audit-toolbar">
+              <input id="auditSearchInput" type="search" placeholder="搜索操作人 / 动作 / 目标 / 摘要 / IP">
+              <select id="auditActionFilter">
+                <option value="">全部动作</option>
+              </select>
+              <select id="auditOutcomeFilter">
+                <option value="">全部结果</option>
+                <option value="success">success</option>
+                <option value="failed">failed</option>
+                <option value="denied">denied</option>
+              </select>
+            </div>
+            <div id="auditEventsList" class="audit-events-list"></div>
+          </section>
+          <aside class="panel compact audit-scope-panel">
+            <div class="section-head">
+              <div>
+                <h2>审计范围</h2>
+                <p class="muted">当前已覆盖关键安全动作。</p>
+              </div>
+            </div>
+            <ul class="audit-scope-list">
+              <li><strong>身份</strong><span>登录、退出、越权拒绝</span></li>
+              <li><strong>审批</strong><span>申请提交、审批处理、短期授权</span></li>
+              <li><strong>凭证</strong><span>查看明文、复制凭证、保存凭证</span></li>
+              <li><strong>访问</strong><span>WebSSH 打开、会话授权校验</span></li>
+              <li><strong>运维</strong><span>云同步、费用同步、告警处理、附件上传</span></li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <div id="approvalModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="approvalModalTitle">
+      <section class="modal-panel approval-modal-panel">
+        <div class="section-head modal-head">
+          <div>
+            <h2 id="approvalModalTitle">提交审批申请</h2>
+            <p id="approvalModalHint" class="muted">填写用途、权限和有效期后提交。</p>
+          </div>
+          <button id="closeApprovalModalButton" type="button">关闭</button>
+        </div>
+        <div class="approval-modal-grid">
+          <section id="approvalPanel" class="panel compact developer-section approval-panel">
+              <div class="section-head">
+                <div>
+                  <h2>审批与凭证</h2>
+                  <p class="muted">查看、复制、登录、签发都会进入审计。</p>
+                </div>
+              </div>
+              <form id="approvalForm" class="form-grid compact-form">
+                <label>申请人<input id="approvalRequester" required value="developer"></label>
+                <label>类型
+                  <select id="approvalRequestType">
+                    <option value="credential">credential</option>
+                    <option value="webssh">webssh</option>
+                    <option value="cloud_sts">cloud_sts</option>
+                  </select>
+                </label>
+                <label>目标<select id="approvalTargetId"></select></label>
+                <label>环境<input id="approvalEnvironment" required></label>
+                <label>权限级别
+                  <select id="approvalPermissionLevel">
+                    <option value="read">read</option>
+                    <option value="operator">operator</option>
+                    <option value="admin">admin</option>
+                  </select>
+                </label>
+                <label>有效期分钟<input id="approvalDurationMinutes" type="number" min="5" max="480" value="30"></label>
+                <label class="span-2">用途<textarea id="approvalReason" required rows="3" placeholder="说明排障、发布或验证用途"></textarea></label>
+                <button type="submit" class="span-2">提交申请</button>
+              </form>
+            </section>
+            <section class="panel compact developer-section approval-list-panel">
+              <div class="section-head">
+                <div>
+                  <h2>审批待办</h2>
+                  <p class="muted">有审批权限的角色可在这里处理待办。</p>
+                </div>
+              </div>
+              <div id="approvalList" class="changes-list"></div>
+            </section>
+        </div>
+      </section>
+    </div>
+
+    <div id="developerAssetModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="developerAssetModalTitle">
+      <section class="modal-panel developer-asset-modal-panel">
+        <div class="section-head modal-head">
+          <div>
+            <h2 id="developerAssetModalTitle">资产详情</h2>
+            <p id="developerAssetModalHint" class="muted">只读查看资产基础信息、规格和最近状态。</p>
+          </div>
+          <button id="closeDeveloperAssetModalButton" type="button">关闭</button>
+        </div>
+        <div id="developerAssetModalBody" class="developer-asset-modal-body"></div>
+      </section>
+    </div>
+
+    <section id="configPage" class="config-page hidden">
+      <div class="config-page-shell">
+        <header class="config-header">
+          <div>
+            <h2>配置中心</h2>
+            <p class="muted">云账号、凭证、同步、资产维护与运维记录集中配置。</p>
+          </div>
+          <nav id="configDomainTabs" class="config-nav" aria-label="配置页导航">
+            <button type="button" data-config-domain="cloud">云账号</button>
+            <button type="button" data-config-domain="tools">工具凭证</button>
+            <button type="button" data-config-domain="permission">权限流程</button>
+            <button type="button" data-config-domain="inspection">巡检</button>
+            <button type="button" data-config-domain="sync">同步任务</button>
+            <button type="button" data-config-domain="governance">标签分账</button>
+            <button type="button" data-config-domain="asset">资产变更</button>
+          </nav>
+          <button id="closeConfigPageButton" type="button">关闭</button>
+        </header>
+
+        <div class="config-grid">
+          <div class="config-main">
+            <section id="cloudAccountPanel" class="panel compact config-section primary-config" data-config-domains="cloud sync">
+              <div class="section-head">
+                <div>
+                  <h2>云账号管理</h2>
+                  <p class="muted">平台 -> 云账号 -> 资产。AWS 填 AK/SK；Cloudflare 填 API Token。</p>
+                </div>
+                <div class="section-actions">
+                  <button id="toggleCloudAccountSectionButton" type="button">收起</button>
+                  <button id="newCloudAccountButton" type="button">新建</button>
+                </div>
+              </div>
+              <form id="cloudAccountForm" class="form-grid" data-section-body="cloudAccount">
+                <input id="cloudAccountId" type="hidden">
+                <fieldset class="form-section span-2">
+                  <legend>基础信息</legend>
+                  <div class="form-grid inner">
+                    <label>平台
+                      <select id="cloudAccountPlatformCode" required></select>
+                    </label>
+                    <label>云账号名称<input id="cloudAccountName" required></label>
+                    <label>账号 ID / 标识<input id="cloudAccountAccountId"></label>
+                    <label>默认 Region<input id="cloudAccountDefaultRegion" placeholder="ap-southeast-1 / global"></label>
+                    <label>环境
+                      <select id="cloudAccountEnvironment" required>
+                        <option value="dev">dev</option>
+                        <option value="prod">prod</option>
+                        <option value="local">local</option>
+                        <option value="test">test</option>
+                        <option value="staging">staging</option>
+                      </select>
+                    </label>
+                    <label>负责人<input id="cloudAccountOwner" required></label>
+                    <label>重要级别
+                      <select id="cloudAccountCriticality" required>
+                        <option value="medium">medium</option>
+                        <option value="high">high</option>
+                        <option value="low">low</option>
+                      </select>
+                    </label>
+                  </div>
+                </fieldset>
+                <fieldset class="form-section span-2">
+                  <legend>凭证</legend>
+                  <div class="credential-hint">AWS 使用 Access Key / Secret；Cloudflare 在 AK / API Token 中填写 API Token，Secret 可留空。</div>
+                  <div class="form-grid inner">
+                    <label>AK / API Token<input id="cloudAccountAccessKeyId" autocomplete="off"></label>
+                    <label>SK / Secret<input id="cloudAccountSecretAccessKey" type="password" autocomplete="new-password" placeholder="Cloudflare 可留空"></label>
+                  </div>
+                </fieldset>
+                <fieldset class="form-section span-2">
+                  <legend data-i18n="config.syncPolicy">同步策略</legend>
+                  <div class="form-grid inner">
+                    <label><span data-i18n="config.syncMode">同步模式</span>
+                      <select id="cloudAccountSyncMode">
+                        <option value="manual">manual</option>
+                        <option value="scheduled">scheduled</option>
+                      </select>
+                    </label>
+                    <div id="syncPeriodField" class="span-2">
+                      <span class="field-label" data-i18n="config.syncPeriod">同步周期</span>
+                      <div class="sync-period-grid">
+                        <label><input id="cloudAccountSyncYears" type="number" min="0" max="10" step="1" value="0"><span data-i18n="unit.year">年</span></label>
+                        <label><input id="cloudAccountSyncMonths" type="number" min="0" max="11" step="1" value="0"><span data-i18n="unit.month">月</span></label>
+                        <label><input id="cloudAccountSyncWeeks" type="number" min="0" max="52" step="1" value="0"><span data-i18n="unit.week">周</span></label>
+                        <label><input id="cloudAccountSyncDays" type="number" min="0" max="31" step="1" value="0"><span data-i18n="unit.day">日</span></label>
+                        <label><input id="cloudAccountSyncHours" type="number" min="0" max="23" step="1" value="6"><span data-i18n="unit.hour">时</span></label>
+                        <label><input id="cloudAccountSyncMinutes" type="number" min="0" max="59" step="1" value="0"><span data-i18n="unit.minute">分</span></label>
+                        <label><input id="cloudAccountSyncSeconds" type="number" min="0" max="59" step="1" value="0"><span data-i18n="unit.second">秒</span></label>
+                      </div>
+                    </div>
+                    <input id="cloudAccountSyncCron" type="hidden">
+                    <label class="checkbox-field span-2"><input id="cloudAccountSyncEnabled" type="checkbox"><span data-i18n="config.autoSync">启用自动同步</span></label>
+                  </div>
+                </fieldset>
+                <div class="actions span-2">
+                  <button id="saveCloudAccountButton" type="submit">保存云账号</button>
+                  <button id="syncCloudAccountButton" type="button">立即同步</button>
+                  <button id="syncCloudAccountCostButton" type="button">同步费用</button>
+                </div>
+              </form>
+            </section>
+
+            <section id="assetConfigPanel" class="panel compact config-section" data-config-domains="asset">
+              <div class="section-head">
+                <div>
+                  <h2 id="assetFormTitle">新增资产</h2>
+                  <p class="muted">支持手工维护非云发现资产。</p>
+                </div>
+                <div class="section-actions">
+                  <button id="exportAssetsButton" type="button">导出</button>
+                  <button id="importAssetsButton" type="button">导入</button>
+                  <button id="toggleAssetSectionButton" type="button">收起</button>
+                  <button id="newAssetButton" type="button">新建</button>
+                </div>
+              </div>
+              <input id="assetImportFile" class="hidden" type="file" accept="application/json,.json">
+              <form id="assetForm" class="form-grid" data-section-body="asset">
+                <input id="assetId" type="hidden">
+
+                <label>平台代码<input id="assetPlatformCode" required></label>
+                <label>平台名称<input id="assetPlatformName" required></label>
+                <label>云账号名称<input id="assetCloudAccountName"></label>
+                <label>账号 ID / 标识<input id="assetAccountId"></label>
+                <label>项目维度
+                  <select id="assetProjectCode">
+                    <option value="public">公共资源</option>
+                    <option value="cloud">cloud</option>
+                    <option value="edge">edge</option>
+                    <option value="enterprise">enterprise</option>
+                    <option value="business">business</option>
+                    <option value="pve">pve</option>
+                  </select>
+                </label>
+                <label>分类<input id="assetCategory" required placeholder="compute / network / database"></label>
+                <label>资源类型<input id="assetResourceType" required></label>
+                <label>地域 / 可用区<input id="assetRegion"></label>
+                <label>环境
+                  <select id="assetEnvironment" required>
+                    <option value="dev">dev</option>
+                    <option value="prod">prod</option>
+                    <option value="local">local</option>
+                    <option value="test">test</option>
+                    <option value="staging">staging</option>
+                  </select>
+                </label>
+                <label>资源名称<input id="assetName" required></label>
+                <label>入口 / 地址<input id="assetEndpoint"></label>
+                <label>负责人<input id="assetOwner" required></label>
+                <label>状态
+                  <select id="assetStatus" required>
+                    <option value="active">active</option>
+                    <option value="maintenance">maintenance</option>
+                    <option value="offline">offline</option>
+                  </select>
+                </label>
+                <label>重要级别
+                  <select id="assetCriticality" required>
+                    <option value="high">high</option>
+                    <option value="medium">medium</option>
+                    <option value="low">low</option>
+                  </select>
+                </label>
+                <label>最近巡检<input id="assetLastCheckedAt" type="date" required></label>
+                <label>标签<input id="assetTags" placeholder="prod, k8s, mysql"></label>
+                <label class="span-2">备注<textarea id="assetNotes" rows="4"></textarea></label>
+
+                <div class="actions span-2">
+                  <button id="saveAssetButton" type="submit">保存资产</button>
+                  <button id="deleteAssetButton" type="button" class="danger" disabled>删除资产</button>
+                </div>
+              </form>
+              <form id="assetBulkForm" class="form-grid" data-section-body="asset">
+                <fieldset class="form-section span-2">
+                  <legend>批量编辑</legend>
+                  <p class="muted">按当前资产树筛选条件批量更新资产治理字段；留空字段不会修改。</p>
+                  <div class="form-grid inner">
+                    <label>项目维度
+                      <select id="assetBulkProjectCode">
+                        <option value="">不修改</option>
+                        <option value="public">公共资源</option>
+                        <option value="cloud">cloud</option>
+                        <option value="edge">edge</option>
+                        <option value="enterprise">enterprise</option>
+                        <option value="business">business</option>
+                        <option value="pve">pve</option>
+                      </select>
+                    </label>
+                    <label>环境
+                      <select id="assetBulkEnvironment">
+                        <option value="">不修改</option>
+                        <option value="dev">dev</option>
+                        <option value="prod">prod</option>
+                        <option value="local">local</option>
+                        <option value="test">test</option>
+                        <option value="staging">staging</option>
+                      </select>
+                    </label>
+                    <label>状态
+                      <select id="assetBulkStatus">
+                        <option value="">不修改</option>
+                        <option value="active">active</option>
+                        <option value="maintenance">maintenance</option>
+                        <option value="offline">offline</option>
+                        <option value="stale">stale</option>
+                      </select>
+                    </label>
+                    <label>重要级别
+                      <select id="assetBulkCriticality">
+                        <option value="">不修改</option>
+                        <option value="high">high</option>
+                        <option value="medium">medium</option>
+                        <option value="low">low</option>
+                      </select>
+                    </label>
+                    <label>负责人<input id="assetBulkOwner" placeholder="不修改"></label>
+                    <label>分类<input id="assetBulkCategory" placeholder="不修改"></label>
+                    <label>资源类型<input id="assetBulkResourceType" placeholder="不修改"></label>
+                    <label>地域 / 可用区<input id="assetBulkRegion" placeholder="不修改"></label>
+                    <label>标签<input id="assetBulkTags" placeholder="不修改；逗号分隔"></label>
+                    <label class="span-2">备注<textarea id="assetBulkNotes" rows="2" placeholder="不修改"></textarea></label>
+                  </div>
+                </fieldset>
+                <div class="actions span-2">
+                  <button id="assetBulkUpdateButton" type="submit">批量更新当前筛选资产</button>
+                  <span id="assetBulkScopeHint" class="muted"></span>
+                </div>
+              </form>
+            </section>
+
+            <section id="toolConfigPanel" class="panel compact config-section" data-config-domains="tools">
+              <div class="section-head">
+                <div>
+                  <h2 id="toolFormTitle">新增工具资产</h2>
+                  <p class="muted">工具由运维配置，同时作为 tool 类资产进入资产树和开发者工作台。</p>
+                </div>
+                <div class="section-actions">
+                  <button id="toggleToolSectionButton" type="button">收起</button>
+                  <button id="newToolButton" type="button">新建</button>
+                </div>
+              </div>
+              <form id="toolForm" class="form-grid" data-section-body="tool">
+                <input id="toolId" type="hidden">
+                <label>归属<select id="toolEnvironment" required></select></label>
+                <label>工具类型
+                  <select id="toolType" required>
+                    <option value="business">business</option>
+                    <option value="deploy">deploy</option>
+                    <option value="ci">ci</option>
+                    <option value="k8s">k8s</option>
+                    <option value="bastion">bastion</option>
+                    <option value="registry">registry</option>
+                    <option value="cert">cert</option>
+                    <option value="monitor">monitor</option>
+                    <option value="log">log</option>
+                    <option value="database">database</option>
+                    <option value="docs">docs</option>
+                    <option value="admin">admin</option>
+                    <option value="ssh">ssh</option>
+                  </select>
+                </label>
+                <label>工具名称<input id="toolName" required></label>
+                <label>入口 URL<input id="toolEndpoint" required placeholder="https://grafana.example.com"></label>
+                <label>负责人<input id="toolOwner" required value="Ops"></label>
+                <label>状态
+                  <select id="toolStatus">
+                    <option value="active">active</option>
+                    <option value="maintenance">maintenance</option>
+                    <option value="offline">offline</option>
+                  </select>
+                </label>
+                <label>重要级别
+                  <select id="toolCriticality">
+                    <option value="medium">medium</option>
+                    <option value="high">high</option>
+                    <option value="low">low</option>
+                  </select>
+                </label>
+                <label>登录策略
+                  <select id="toolLoginPolicy">
+                    <option value="sso">sso</option>
+                    <option value="shared_credential">shared_credential</option>
+                    <option value="temporary_credential">temporary_credential</option>
+                    <option value="webssh" disabled>webssh（历史选项，WebSSH 请用 EC2 资产）</option>
+                  </select>
+                </label>
+                <label>凭证策略
+                  <select id="toolCredentialPolicy">
+                    <option value="none">none</option>
+                    <option value="viewable">viewable</option>
+                    <option value="approval_required">approval_required</option>
+                    <option value="temporary_only">temporary_only</option>
+                  </select>
+                </label>
+                <label>标签<input id="toolTags" placeholder="rancher, dev, k8s"></label>
+                <label class="checkbox-field"><input id="toolApprovalRequired" type="checkbox">敏感操作需要审批</label>
+                <label class="checkbox-field hidden"><input id="toolWebsshEnabled" type="checkbox">支持 WebSSH</label>
+                <p class="muted span-2">工具资产只维护入口和凭证策略；WebSSH 请在 AWS EC2 资产上申请。</p>
+                <label class="span-2">说明<textarea id="toolDescription" rows="3"></textarea></label>
+                <div class="actions span-2">
+                  <button id="saveToolButton" type="submit">保存工具资产</button>
+                </div>
+              </form>
+            </section>
+
+            <section id="credentialConfigPanel" class="panel compact config-section" data-config-domains="tools">
+              <div class="section-head">
+                <div>
+                  <h2>凭证管理</h2>
+                  <p class="muted">给工具、资产或云账号维护受控凭证。保存后只展示脱敏值，查看和复制都会审计。</p>
+                </div>
+                <div class="section-actions">
+                  <button id="toggleCredentialSectionButton" type="button">收起</button>
+                  <button id="newCredentialButton" type="button">新建</button>
+                </div>
+              </div>
+              <form id="credentialForm" class="form-grid" data-section-body="credential">
+                <label>归属类型
+                  <select id="credentialOwnerType">
+                    <option value="asset">asset / tool</option>
+                    <option value="cloud_account">cloud_account</option>
+                  </select>
+                </label>
+                <label>归属对象<select id="credentialOwnerId" required></select></label>
+                <label>凭证类型
+                  <select id="credentialKind">
+                    <option value="username">username</option>
+                    <option value="password">password</option>
+                    <option value="api_token">api_token</option>
+                    <option value="secret">secret</option>
+                    <option value="ssh_key">ssh_key</option>
+                  </select>
+                </label>
+                <label>键名<input id="credentialKeyName" value="default" placeholder="default / admin / token"></label>
+                <label>环境<input id="credentialEnvironment" placeholder="global / dev / prod"></label>
+                <label>项目<input id="credentialProjectCode" placeholder="business / edge / public"></label>
+                <label>访问策略
+                  <select id="credentialAccessPolicy">
+                    <option value="ops_only">ops_only</option>
+                    <option value="approval_required">approval_required</option>
+                  </select>
+                </label>
+                <label>状态
+                  <select id="credentialStatus">
+                    <option value="active">active</option>
+                    <option value="disabled">disabled</option>
+                  </select>
+                </label>
+                <label class="span-2">凭证明文<textarea id="credentialValue" required rows="3" autocomplete="new-password" placeholder="保存后不会回填明文"></textarea></label>
+                <div class="actions span-2">
+                  <button id="saveCredentialButton" type="submit">保存凭证</button>
+                </div>
+              </form>
+            </section>
+
+            <section id="tagGovernancePanel" class="panel compact config-section" data-config-domains="governance">
+              <div class="section-head">
+                <div>
+                  <h2>标签治理</h2>
+                  <p class="muted">基于台账资产和云资源 tag 值识别 Project / Environment 缺口。</p>
+                </div>
+              </div>
+              <div id="tagGovernanceSummary" class="tag-governance-summary"></div>
+              <div id="tagGovernanceList" class="changes-list tag-governance-list"></div>
+            </section>
+
+            <section id="chargebackPanel" class="panel compact config-section" data-config-domains="governance">
+              <div class="section-head">
+                <div>
+                  <h2>项目分账</h2>
+                  <p class="muted">只读估算：按云账号内非 stale 资产项目占比分摊账号费用。</p>
+                </div>
+              </div>
+              <div id="chargebackSummary" class="tag-governance-summary"></div>
+              <div id="chargebackList" class="changes-list chargeback-list"></div>
+            </section>
+
+            <section id="userConfigPanel" class="panel compact config-section" data-config-domains="permission">
+              <div class="section-head">
+                <div>
+                  <h2 id="userFormTitle">权限管理</h2>
+                  <p class="muted">配置用户、角色、角色权限和审批流程。</p>
+                </div>
+                <div class="section-actions">
+                  <button id="toggleUserSectionButton" type="button">收起</button>
+                  <button id="newUserButton" type="button">新建</button>
+                </div>
+              </div>
+              <form id="userForm" class="form-grid" data-section-body="user">
+                <input id="userId" type="hidden">
+                <label>用户名<input id="userUsername" required></label>
+                <label>显示名<input id="userDisplayName" required></label>
+                <label>邮箱<input id="userEmail" type="email" placeholder="user@example.com"></label>
+                <label>手机号<input id="userPhone" placeholder="+86 13800000000"></label>
+                <label>角色
+                  <select id="userRole">
+                    <option value="developer">developer</option>
+                    <option value="ops">ops</option>
+                    <option value="admin">admin</option>
+                    <option value="readonly">readonly</option>
+                  </select>
+                </label>
+                <label>团队<input id="userTeam" placeholder="Engineering"></label>
+                <label>密码<input id="userPassword" type="password" placeholder="留空则不修改"></label>
+                <label>状态
+                  <select id="userStatus">
+                    <option value="active">active</option>
+                    <option value="disabled">disabled</option>
+                  </select>
+                </label>
+                <div class="actions span-2">
+                  <button id="saveUserButton" type="submit">保存用户</button>
+                </div>
+              </form>
+
+              <div class="permission-admin" data-section-body="user">
+                <section class="form-section">
+                  <div class="section-head">
+                    <div>
+                      <h3>角色配置</h3>
+                      <p class="muted">定义角色编码、名称和层级。</p>
+                    </div>
+                  </div>
+                  <form id="roleForm" class="form-grid inner">
+                    <input id="roleId" type="hidden">
+                    <label>角色编码<input id="roleCode" required placeholder="lead"></label>
+                    <label>角色名称<input id="roleName" required placeholder="Development Lead"></label>
+                    <label>层级<input id="roleLevel" type="number" min="1" max="999" value="50"></label>
+                    <label>状态
+                      <select id="roleStatus">
+                        <option value="active">active</option>
+                        <option value="disabled">disabled</option>
+                      </select>
+                    </label>
+                    <label class="span-2">说明<textarea id="roleDescription" rows="2"></textarea></label>
+                    <div class="actions span-2">
+                      <button id="saveRoleButton" type="submit">保存角色</button>
+                      <button id="newRoleButton" type="button">新建角色</button>
+                    </div>
+                  </form>
+                  <div id="roleList" class="role-list"></div>
+                </section>
+
+                <section class="form-section">
+                  <div class="section-head">
+                    <div>
+                      <h3>角色权限</h3>
+                      <p class="muted">按角色、环境、资源范围和动作配置权限。</p>
+                    </div>
+                  </div>
+                  <form id="permissionForm" class="form-grid inner">
+                    <input id="permissionId" type="hidden">
+                    <label>角色<select id="permissionRole" required></select></label>
+                    <label>环境<select id="permissionEnvironment" required></select></label>
+                    <label>项目范围
+                      <select id="permissionProjectCode" required>
+                        <option value="*">*</option>
+                        <option value="business">business</option>
+                        <option value="edge">edge</option>
+                        <option value="enterprise">enterprise</option>
+                        <option value="cloud">cloud</option>
+                        <option value="pve">pve</option>
+                        <option value="public">公共资源</option>
+                      </select>
+                    </label>
+                    <label>资源范围
+                      <select id="permissionScope" required>
+                        <option value="tool">tool</option>
+                        <option value="business">business</option>
+                        <option value="asset">asset</option>
+                        <option value="credential">credential</option>
+                        <option value="webssh">webssh</option>
+                        <option value="approval">approval</option>
+                        <option value="config">config</option>
+                        <option value="*">*</option>
+                      </select>
+                    </label>
+                    <label>动作
+                      <select id="permissionAction" required>
+                        <option value="view">view</option>
+                        <option value="request">request</option>
+                        <option value="connect">connect</option>
+                        <option value="decide">decide</option>
+                        <option value="manage">manage</option>
+                        <option value="*">*</option>
+                      </select>
+                    </label>
+                    <label class="checkbox-field"><input id="permissionRequiresApproval" type="checkbox">需要审批</label>
+                    <div class="actions">
+                      <button id="savePermissionButton" type="submit">保存权限</button>
+                      <button id="newPermissionButton" type="button">新建权限</button>
+                    </div>
+                  </form>
+                  <div id="permissionList" class="permission-list"></div>
+                </section>
+
+                <section class="form-section">
+                  <div class="section-head">
+                    <div>
+                      <h3>审批流程</h3>
+                      <p class="muted">拖动步骤调整顺序，保存后作为审批编排定义。</p>
+                    </div>
+                  </div>
+                  <form id="approvalFlowForm" class="form-grid inner">
+                    <input id="approvalFlowId" type="hidden">
+                    <label>流程名称<input id="approvalFlowName" required placeholder="Production Credential Access Approval"></label>
+                    <label>环境<select id="approvalFlowEnvironment" required></select></label>
+                    <label>范围
+                      <select id="approvalFlowScope" required>
+                        <option value="credential">credential</option>
+                        <option value="webssh">webssh</option>
+                        <option value="cloud_sts">cloud_sts</option>
+                        <option value="change">change</option>
+                        <option value="*">*</option>
+                      </select>
+                    </label>
+                    <label>状态
+                      <select id="approvalFlowStatus">
+                        <option value="active">active</option>
+                        <option value="disabled">disabled</option>
+                      </select>
+                    </label>
+                    <label class="span-2">说明<textarea id="approvalFlowDescription" rows="2"></textarea></label>
+                  </form>
+                  <div id="approvalFlowSteps" class="approval-flow-steps"></div>
+                  <div class="actions flow-actions">
+                    <button id="addApprovalStepButton" type="button">新增步骤</button>
+                    <button id="saveApprovalFlowButton" type="button" class="primary">保存流程</button>
+                    <button id="newApprovalFlowButton" type="button">新建流程</button>
+                  </div>
+                  <div id="approvalFlowList" class="approval-flow-list"></div>
+                </section>
+              </div>
+            </section>
+
+            <section id="changeConfigPanel" class="panel compact config-section" data-config-domains="asset">
+              <div class="section-head">
+                <div>
+                  <h2 id="changeFormTitle">新增变更</h2>
+                  <p class="muted">记录执行窗口、风险级别和回滚方案。</p>
+                </div>
+                <div class="section-actions">
+                  <button id="toggleChangeSectionButton" type="button">收起</button>
+                  <button id="newChangeButton" type="button">新建</button>
+                </div>
+              </div>
+              <form id="changeForm" class="form-grid" data-section-body="change">
+                <input id="changeId" type="hidden">
+
+                <label class="span-2">关联资产
+                  <select id="changeAssetId" required></select>
+                </label>
+                <label class="span-2">标题<input id="changeTitle" required></label>
+                <label>类别
+                  <select id="changeCategory" required>
+                    <option value="release">release</option>
+                    <option value="inspection">inspection</option>
+                    <option value="network">network</option>
+                    <option value="security">security</option>
+                    <option value="certificate">certificate</option>
+                    <option value="capacity">capacity</option>
+                  </select>
+                </label>
+                <label>执行人<input id="changeExecutor" required></label>
+                <label>风险级别
+                  <select id="changeRiskLevel" required>
+                    <option value="high">high</option>
+                    <option value="medium">medium</option>
+                    <option value="low">low</option>
+                  </select>
+                </label>
+                <label>状态
+                  <select id="changeStatus" required>
+                    <option value="planned">planned</option>
+                    <option value="in_progress">in_progress</option>
+                    <option value="done">done</option>
+                    <option value="cancelled">cancelled</option>
+                  </select>
+                </label>
+                <label class="span-2">执行窗口<input id="changeWindow" required placeholder="2026-05-29 22:00-23:00"></label>
+                <label class="span-2">回滚方案<textarea id="changeRollbackPlan" rows="3" required></textarea></label>
+                <label class="span-2">执行摘要<textarea id="changeSummary" rows="4"></textarea></label>
+
+                <div class="actions span-2">
+                  <button id="saveChangeButton" type="submit">保存变更</button>
+                  <button id="deleteChangeButton" type="button" class="danger" disabled>删除变更</button>
+                </div>
+              </form>
+            </section>
+
+            <section id="inspectionConfigPanel" class="panel compact config-section" data-config-domains="inspection">
+              <div class="section-head">
+                <div>
+                  <h2>自动巡检</h2>
+                  <p class="muted">巡检由后台自动拨测、同步检查和资产规则生成；这里仅保留当前口径说明。</p>
+                </div>
+                <div class="section-actions">
+                  <button id="toggleInspectionSectionButton" type="button">收起</button>
+                </div>
+              </div>
+              <form id="inspectionForm" class="form-grid" data-section-body="inspection">
+                <input id="inspectionAssetId" type="hidden">
+                <label>巡检资产<input id="inspectionAssetName" disabled></label>
+                <label>执行人<input id="inspectionExecutor" required></label>
+                <label>巡检结果
+                  <select id="inspectionResult" required>
+                    <option value="ok">ok</option>
+                    <option value="warning">warning</option>
+                    <option value="failed">failed</option>
+                  </select>
+                </label>
+                <label>巡检时间<input id="inspectionCheckedAt" type="date" required></label>
+                <label class="span-2">巡检摘要<textarea id="inspectionSummary" rows="3"></textarea></label>
+                <div class="actions span-2">
+                  <button id="saveInspectionButton" type="submit">自动生成，无需保存</button>
+                </div>
+              </form>
+              <div class="config-subsection" data-section-body="inspection">
+                <div class="section-head">
+                  <div>
+                    <h3>告警记录</h3>
+                    <p class="muted">自动拨测和巡检规则生成，恢复后可自动关闭；未恢复的告警由运维处理留痕。</p>
+                  </div>
+                </div>
+                <div id="alertList" class="changes-list compact-list"></div>
+              </div>
+            </section>
+
+          </div>
+
+          <aside class="config-side">
+            <section class="panel compact config-section side-section" data-config-domains="cloud sync">
+              <div class="section-head">
+                <div>
+                  <h2>云账号列表</h2>
+                  <p class="muted">点击云账号仅回填配置；详情在资产树点击云账号查看。</p>
+                </div>
+              </div>
+              <div id="cloudAccountsList" class="changes-list"></div>
+            </section>
+
+            <section class="panel compact config-section side-section" data-config-domains="cloud sync inspection">
+              <div class="section-head">
+                <div>
+                  <h2>最近同步</h2>
+                  <p class="muted">展示最近的云账号同步留痕。</p>
+                </div>
+              </div>
+              <div id="recentSyncsList" class="changes-list"></div>
+            </section>
+
+            <section class="panel compact config-section side-section" data-config-domains="tools">
+              <div class="section-head">
+                <div>
+                  <h2>工具资产列表</h2>
+                  <p class="muted">点击工具可回填编辑，并同步出现在开发者工作台。</p>
+                </div>
+              </div>
+              <div id="toolsList" class="changes-list"></div>
+            </section>
+
+            <section class="panel compact config-section side-section" data-config-domains="tools">
+              <div class="section-head">
+                <div>
+                  <h2>凭证列表</h2>
+                  <p class="muted">只显示脱敏值，查看和复制都会写审计。</p>
+                </div>
+              </div>
+              <div id="credentialsList" class="changes-list"></div>
+            </section>
+
+            <section class="panel compact config-section side-section" data-config-domains="permission">
+              <div class="section-head">
+                <div>
+                  <h2>用户列表</h2>
+                  <p class="muted">本地用户与角色权限底座。</p>
+                </div>
+              </div>
+              <div id="usersList" class="changes-list"></div>
+            </section>
+
+          </aside>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="/static/app-utils.js?v=20260602-0.2.4" defer></script>
+  <script src="/static/app-api.js?v=20260602-0.2.4" defer></script>
+  <script src="/static/app-tree.js?v=20260602-0.2.4" defer></script>
+  <script src="/static/app-tree-view.js?v=20260602-0.2.4" defer></script>
+  <script src="/static/app-config.js?v=20260602-0.2.4" defer></script>
+  <script src="/static/app-developer.js?v=20260602-0.2.4" defer></script>
+  <script src="/static/app-detail.js?v=20260602-0.2.4" defer></script>
+  <script src="/static/app-forms.js?v=20260602-0.2.4" defer></script>
+  <script src="/static/app-runtime.js?v=20260602-0.2.4" defer></script>
+  <script src="/static/app-i18n.js?v=20260602-0.2.4" defer></script>
+  <script src="/static/app-events.js?v=20260602-0.2.4" defer></script>
+  <script src="/static/app.js?v=20260602-0.2.4" defer></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+services:
+  opsledger:
+    build: .
+    image: opsledger:latest
+    ports:
+      - "18090:18090"
+    volumes:
+      - opsledger-data:/data
+    env_file:
+      - .env
+    environment:
+      OPSLEDGER_ADDR: 0.0.0.0:18090
+      OPSLEDGER_DATA: /data/opsledger.db
+    restart: unless-stopped
+
+volumes:
+  opsledger-data:
