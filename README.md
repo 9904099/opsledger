@@ -1,8 +1,16 @@
 # OpsLedger
 
+Self-hosted cloud operations ledger, lightweight CMDB, cloud asset inventory, credential approval, audit log, cost snapshot, and WebSSH gateway for SRE, DevOps, platform engineering, and small cloud operations teams.
+
 [中文文档](./README.zh-CN.md)
 
 OpsLedger is a lightweight cloud operations ledger for small platform and SRE teams. It tracks cloud accounts, assets, credentials, approvals, audit events, probes, cost snapshots, and controlled WebSSH access in a single Go service.
+
+## Search Keywords
+
+OpsLedger can be found by searches such as **cloud operations ledger**, **cloud asset inventory**, **open source CMDB**, **self-hosted CMDB**, **DevOps asset management**, **SRE operations platform**, **cloud account management**, **credential approval workflow**, **WebSSH gateway**, **AWS asset discovery**, **Cloudflare DNS inventory**, **PVE VM inventory**, **infrastructure audit log**, **cloud cost snapshot**, and **internal developer portal**.
+
+中文搜索关键词：**云平台运维台账**、**云资产管理**、**开源 CMDB**、**自托管 CMDB**、**运维资产台账**、**云账号管理**、**凭证审批**、**权限审批流**、**WebSSH 堡垒机**、**AWS 资产发现**、**Cloudflare DNS 管理**、**PVE 虚拟机台账**、**运维审计日志**、**云成本快照**、**开发者工作台**。
 
 ## Product Capabilities
 

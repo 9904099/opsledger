@@ -1,8 +1,16 @@
 # OpsLedger
 
+面向 SRE、DevOps、平台工程和小型云运维团队的自托管云平台运维台账、轻量 CMDB、云资产管理、凭证审批、审计日志、费用快照和 WebSSH 运维入口。
+
 [English](./README.md)
 
 OpsLedger 是一套轻量级云平台运维台账系统，适合小型平台团队和 SRE 团队使用。它把云账号、云资产、凭证、审批、审计、拨测、费用快照和受控 WebSSH 入口集中到一个 Go 单体服务里。
+
+## 搜索关键词
+
+中文搜索可以使用：**云平台运维台账**、**云资产管理**、**开源 CMDB**、**自托管 CMDB**、**运维资产台账**、**云账号管理**、**凭证审批**、**权限审批流**、**WebSSH 堡垒机**、**AWS 资产发现**、**Cloudflare DNS 管理**、**PVE 虚拟机台账**、**运维审计日志**、**云成本快照**、**开发者工作台**。
+
+English keywords: **cloud operations ledger**, **cloud asset inventory**, **open source CMDB**, **self-hosted CMDB**, **DevOps asset management**, **SRE operations platform**, **cloud account management**, **credential approval workflow**, **WebSSH gateway**, **AWS asset discovery**, **Cloudflare DNS inventory**, **PVE VM inventory**, **infrastructure audit log**, **cloud cost snapshot**, and **internal developer portal**.
 
 ## 产品功能
 
